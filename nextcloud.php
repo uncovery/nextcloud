@@ -95,7 +95,8 @@ class nextcloud {
 
         $this->debug("deleting file on NC instance: $url_file");
 
-        $this->nc_curl($url_file, array(CURLOPT_CUSTOMREQUEST => "DELETE"));
+        $output = $this->nc_curl($url_file, array(CURLOPT_CUSTOMREQUEST => "DELETE"));
+        return $output;
     }
 
     /**
@@ -128,7 +129,8 @@ class nextcloud {
         // then, move the file to the folder
         $url_file = "remote.php/dav/files/$this->username/$fixed_source_path";
 
-        $this->nc_curl($url_file, $headers);
+        $output = $this->nc_curl($url_file, $headers);
+        return $output;
     }
 
     /**
@@ -208,18 +210,21 @@ class nextcloud {
 
         $output = $this->nc_curl($url, $headers);
 
-        $this->debug($output, 'create_share -> output');
+        $this->debug('create_share output in xml:');
+        $this->debug($output);
 
         // convert the resulting XML String to XML objects
         $xml = simplexml_load_string($output);
 
-        $this->debug($xml, 'create_share -> xml');
+        $this->debug('create_share output converted to XML:');
+        $this->debug($xml);
         // convert it to JSON
         $json = json_encode($xml);
         // convert JSON to array
         $array = json_decode($json,TRUE);
 
-        $this->debug($json, 'create_share -> json');
+        $this->debug('create_share output conv:');
+        $this->debug($json);
 
         return $array['data']['url'];
     }
