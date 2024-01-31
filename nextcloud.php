@@ -53,7 +53,7 @@ class nextcloud {
     }
 
     /**
-     * Filters all files that are not valid according to the settings.
+     * Filters all files from read_folder() that are matching given content types.
      *
      * @param array $files The array of files to be filtered.
      * @return array The filtered array of files.
