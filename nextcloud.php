@@ -9,12 +9,12 @@ class nextcloud {
     /**
      * class constructor to get variables set only.
      *
-     * @param type $in_host
-     * @param type $in_user
-     * @param type $in_pass
-     * @param type $in_debug
+     * @param string $in_host
+     * @param string $in_user
+     * @param string $in_pass
+     * @param string $in_debug
      */
-    public function __construct($in_host, $in_user, $in_pass, $in_debug) {
+    public function __construct(string $in_host, string $in_user, string $in_pass, string $in_debug) {
         $this->hostname = $in_host;
         $this->username = $in_user;
         $this->password = $in_pass;
@@ -24,9 +24,12 @@ class nextcloud {
     /**
      * Reads a Nextcloud folder recursively to a given depth and returns all the contents.
      *
-     * @return type The contents of the Nextcloud folder.
+     * @param string $folder
+     * @param int $depth
+     * @return type
+     * @throws Exception
      */
-    public function read_folder($folder, $depth) {
+    public function read_folder(string $folder, int $depth) {
 
         $url = "remote.php/dav/files/$this->username/$folder";
 
@@ -55,10 +58,11 @@ class nextcloud {
     /**
      * Filters all files from read_folder() that are matching given content types.
      *
-     * @param array $files The array of files to be filtered.
-     * @return array The filtered array of files.
+     * @param object $files
+     * @param array $content_types an array of strings of mime content types
+     * @return type
      */
-    public function filter_files($files, array $content_types) {
+    public function filter_files(object $files, array $content_types) {
 
         $files_copy = array();
         foreach ($files as $F) {
@@ -83,12 +87,11 @@ class nextcloud {
     /**
      * Delete a file on the Nextcloud storage
      *
-     * @global \ums\type $UMS
-     * @param type $file
+     * @param string $file_path
      */
-    public function delete_file($file) {
+    public function delete_file(string $file_path) {
         // then, file to be deleted
-        $url_file = "remote.php/dav/files/$this->username/$file";
+        $url_file = "remote.php/dav/files/$this->username/$file_path";
 
         $this->debug("deleting file on NC instance: $url_file");
 
@@ -98,12 +101,10 @@ class nextcloud {
     /**
      * Move a file on the Nextcloud storage. Replaces spaces with underscores for all files.
      *
-     * @global string $nc_auth
-     * @global string $nc_url
-     * @param string $file The name of the file to be moved.
-     * @param string $target_folder The target folder where the file will be moved to.
+     * @param string $source_path
+     * @param string $target_folder
      */
-    public function move_file($source_path, $target_folder) {
+    public function move_file(string $source_path, string $target_folder) {
 
         $fixed_target_folder = str_replace( ' ', '%20', trim($target_folder));
 
@@ -137,7 +138,7 @@ class nextcloud {
      * @param string|false $target The target file path to save the downloaded file. If false, the file content will be returned.
      * @return string|false The file content if $target is false, otherwise returns true on successful download or false on failure.
      */
-    public function download_file($path, $target = false) {
+    public function download_file(string $path, string|false $target = false) {
         $url = "remote.php/dav/files/$this->username/$path";
         $output = $this->nc_curl($url);
 
@@ -160,9 +161,12 @@ class nextcloud {
 
     /**
      * upload a file from a path to a folder
-     * @param type $path
+     *
+     * @param string $target_path
+     * @param string $file_path
+     * @return type
      */
-    public function upload_file($target_path, $file_path) {
+    public function upload_file(string $target_path, string $file_path) {
 
         $fixed_path = str_replace( ' ', '%20', trim($target_path));
         $this->debug("Uploading file from path $file_path to $fixed_path");
@@ -180,16 +184,14 @@ class nextcloud {
         return $output;
     }
 
-
     /**
      * Create a share on Nextcloud and return the share URL.
      *
-     * @global type $UMS
-     * @param type $path The path of the file or folder to be shared.
-     * @param type $expiry The expiry date of the share.
-     * @return type The share URL.
+     * @param string $path
+     * @param string $expiry
+     * @return type
      */
-    public function create_share($path, $expiry) {
+    public function create_share(string $path, string $expiry) {
         $url = "ocs/v2.php/apps/files_sharing/api/v1/shares";
 
         // make sure we replace spaces in the file
@@ -222,6 +224,14 @@ class nextcloud {
         return $array['data']['url'];
     }
 
+    /**
+     * execute the actual command
+     *
+     * @param string $url
+     * @param array $headers
+     * @return type
+     * @throws Exception
+     */
     private function nc_curl(string $url, array $headers = []) {
         // open the connection
         $ch = curl_init();
@@ -262,12 +272,13 @@ class nextcloud {
     }
 
     /**
-     * debug info
+     * debug function
      *
-     * @param type $info
-     * @param type $target
+     * @param string $info
+     * @return string
+     * @throws Exception
      */
-    private function debug($info) {
+    private function debug(string $info) {
         // check where debug was called
         $trace = debug_backtrace();
         $source = "{$trace[1]['function']}";
