@@ -261,7 +261,7 @@ class nextcloud {
         }
 
         $output = curl_exec($ch);
-        $this->debug("CURL POUTPUT: ");
+        $this->debug("cURL return: ");
         $this->debug($output);
 
         // close the connection
