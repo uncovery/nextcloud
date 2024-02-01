@@ -1,10 +1,10 @@
 <?php
 
 class nextcloud {
-    private $hostname;
-    private $username;
-    private $password;
-    private $debug = false; //options: web console log false
+    private string $hostname;
+    private string $username;
+    private string $password;
+    private string|bool $debug = false; //options: web console log false
 
     /**
      * class constructor to get variables set only.
@@ -31,7 +31,9 @@ class nextcloud {
      */
     public function read_folder(string $folder, int $depth) {
 
-        $url = "remote.php/dav/files/$this->username/$folder";
+        $fixed_folder = $this->remove_spaces($folder);
+
+        $url = "remote.php/dav/files/$this->username/$fixed_folder";
 
         $headers = array(
             CURLOPT_CUSTOMREQUEST => "PROPFIND",
@@ -41,10 +43,18 @@ class nextcloud {
         $this->debug("looking for files $depth folder deep:");
 
         $output = $this->nc_curl($url, $headers);
+
+        if ($output == false) {
+            $this->debug("The wanted folder could not be found");
+            return false;
+        }
+
         $xml = simplexml_load_string($output);
 
         if ($xml === false) {
             throw new Exception("No files could be found on nextcloud");
+        } else {
+            $this->debug("returned xml" . $xml);
         }
 
         $ns = $xml->getNamespaces(true);
@@ -90,12 +100,38 @@ class nextcloud {
      * @param string $file_path
      */
     public function delete_file(string $file_path) {
+        $fixed_file_path = $this->remove_spaces($file_path);
         // then, file to be deleted
-        $url_file = "remote.php/dav/files/$this->username/$file_path";
+        $url_file = "remote.php/dav/files/$this->username/$fixed_file_path";
 
         $this->debug("deleting file on NC instance: $url_file");
 
         $output = $this->nc_curl($url_file, array(CURLOPT_CUSTOMREQUEST => "DELETE"));
+        return $output;
+    }
+
+    /**
+     * create a folder on a next cloud share
+     *
+     * @param string $target_folder
+     * @return type
+     */
+    public function create_folder(string $target_folder) {
+        // first, let's check if it does not exist already:
+        $fixed_target_folder = $this->remove_spaces($target_folder);
+
+        $this->debug("checking if $fixed_target_folder exists");
+        $check = $this->read_folder($fixed_target_folder, 1);
+
+        if ($check) {
+            // folder exists
+            return;
+        }
+
+        // first, we create the folder
+        $url = "remote.php/dav/files/$this->username/$fixed_target_folder";
+        $output = $this->nc_curl($url , array(CURLOPT_CUSTOMREQUEST => "MKCOL"));
+
         return $output;
     }
 
@@ -107,19 +143,16 @@ class nextcloud {
      */
     public function move_file(string $source_path, string $target_folder) {
 
-        $fixed_target_folder = str_replace( ' ', '%20', trim($target_folder));
+        // first create the target folder
+        $this->create_folder($target_folder);
 
-        // first, we create the folder
-        $url = "remote.php/dav/files/$this->username/$fixed_target_folder";
-        $this->nc_curl($url , array(CURLOPT_CUSTOMREQUEST => "MKCOL"));
+        $fixed_target_folder = $this->remove_spaces($target_folder);
 
-        // make sure we replace spaces in the file
-        $str_arr = array(' ', '%20');
-        $fixed_source_path = str_replace($str_arr, "_", $source_path);
+        $fixed_source_path = $this->remove_spaces($source_path);
 
         $url_dest = "{$this->hostname}remote.php/dav/files/$this->username/$fixed_target_folder/$fixed_source_path";
 
-        $this->debug("moving $fixed_source_path to $target_folder", 'move_file');
+        $this->debug("moving $fixed_source_path to $target_folder");
 
         $headers = array(
             CURLOPT_CUSTOMREQUEST => "MOVE",
@@ -196,9 +229,7 @@ class nextcloud {
     public function create_share(string $path, string $expiry) {
         $url = "ocs/v2.php/apps/files_sharing/api/v1/shares";
 
-        // make sure we replace spaces in the file
-        $str_arr = array(' ', '%20');
-        $final_path = "/" .  str_replace($str_arr, "_", $path);
+        $final_path = $this->remove_spaces($path);
 
         $this->debug("Creating share for file $final_path with expiry $expiry");
 
@@ -270,7 +301,9 @@ class nextcloud {
         // check for error
         if ($output === false) {
             throw new Exception("The Nextcloud connection failed. Please check your URL.");
-        } else if (strstr($output, 'Sabre\\DAV\\Exception')) {
+        } else if (strstr($output, 'Sabre\\DAV\\Exception\\NotFound')) {
+            return false;
+        } else if (strstr($output, 'Sabre\\DAV\\Exception')) { // other exceptsion
             throw new Exception("There was an error connecting to Nextcloud. The returned error was:<br><pre>$output</pre>");
         }
         return $output;
@@ -283,7 +316,7 @@ class nextcloud {
      * @return string
      * @throws Exception
      */
-    private function debug(string $info) {
+    private function debug($info) {
         // check where debug was called
         $trace = debug_backtrace();
         $source = "{$trace[1]['function']}";
@@ -308,5 +341,12 @@ class nextcloud {
             default:
                 throw new Exception("Invalid debug format: $this->debug");
         }
+    }
+
+    private function remove_spaces(string $string) {
+        // make sure we replace spaces in the file
+        // $str_arr = array(' ', '%20');
+        $fixed_string = str_replace(" ", "%20", $string);
+        return $fixed_string;
     }
 }
