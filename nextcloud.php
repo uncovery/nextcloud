@@ -26,7 +26,7 @@ class nextcloud {
      *
      * @param string $folder
      * @param int $depth
-     * @return type
+     * @return objext
      * @throws Exception
      */
     public function read_folder(string $folder, int $depth) {
@@ -125,7 +125,7 @@ class nextcloud {
 
         if ($check) {
             // folder exists
-            return;
+            return true;
         }
 
         // first, we create the folder
@@ -186,6 +186,7 @@ class nextcloud {
             if ($fp) {
                 fwrite($fp, $output);
                 fclose($fp);
+                return true;
             } else {
                 throw new Exception("Error creating file: $target!");
             }
@@ -202,7 +203,6 @@ class nextcloud {
      * @return type
      */
     public function upload_file(string $target_path, string $file_path) {
-
         $fixed_path = str_replace( ' ', '%20', trim($target_path));
         $this->debug("Uploading file from path $file_path to $fixed_path");
         $url = "remote.php/dav/files/$this->username/$fixed_path";
