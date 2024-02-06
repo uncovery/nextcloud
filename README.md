@@ -45,7 +45,8 @@ Current available functions:
     You need to make sure the target path exists already.
     returns the cURL output.
 
-create_share(string $path, string $expiry)
+* create_share(string $path, string $expiry)
 
     creates a public share with the given expiry date
     returns the share URL
+
