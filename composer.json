@@ -1,0 +1,11 @@
+{
+    "name": "uncovery/nextcloud",
+    "description": "A minimalist nextcloud API interface class for file handling",
+    "autoload": {
+        "psr-4": {
+            "uncovery\\nextcloud\\": "/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
