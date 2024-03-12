@@ -251,13 +251,20 @@ class nextcloud {
         $this->debug($xml);
         // convert it to JSON
         $json = json_encode($xml);
+
         // convert JSON to array
-        $array = json_decode($json,TRUE);
+        try {
+            $json_array = json_decode($json, TRUE, 512, JSON_THROW_ON_ERROR);
+        } catch (Exception $e) {
+            error_log("ERROR CREATING NC Share: $e");
+            error_log("ERROR CREATING NC Share. XML: $xml");
+            return false;
+        }
 
         $this->debug('create_share output conv:');
-        $this->debug($json);
+        $this->debug($json_array);
 
-        return $array['data']['url'];
+        return $json_array['data']['url'];
     }
 
     /**
