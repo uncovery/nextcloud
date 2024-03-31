@@ -111,6 +111,18 @@ class nextcloud {
     }
 
     /**
+     * emptying the trashbin for the current user
+     *
+     * @return type
+     */
+    public function empty_trash() {
+        $url_file = "remote.php/dav/trashbin/$this->username/trash";
+        $this->debug("emptying trashbin for the current user");
+        $output = $this->nc_curl($url_file, array(CURLOPT_CUSTOMREQUEST => "DELETE"));
+        return $output;
+    }
+
+    /**
      * create a folder on a next cloud share
      *
      * @param string $target_folder
